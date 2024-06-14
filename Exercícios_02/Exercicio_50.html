@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-Br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Reserva de Hotéis</title>
+</head>
+<body>
+    <h1>Sistema de Reserva de Hotéis</h1>
+    <button onclick="iniciarSistema()">Iniciar Sistema</button>
+
+    <script>
+//Exercício 50
+/*Desenvolva um pequeno sistema de reserva de hotéis usando JavaScript. O sistema
+deverá ser capaz de interagir com o usuário através do console do navegador e manter
+um registro das reservas e hotéis disponíveis. Utilize objetos e arrays para gerenciar as
+informações. Não é necessário interface gráfica, apenas funcionalidade lógica.
+
+1. Estrutura de Dados:
+○ Hotel: Cada hotel deve ser um objeto com propriedades para id, nome,
+cidade, quartos totais e quartos disponiveis.
+○ Reservas: Cada reserva deve ser um objeto contendo idReserva, idHotel, e
+nomeCliente.
+
+2. Funcionalidades:
+○ Adicionar hotéis: Permitir que o usuário adicione novos hotéis ao sistema.
+○ Buscar hotéis por cidade: Permitir que o usuário liste todos os hotéis
+disponíveis em uma cidade específica.
+○ Fazer reserva: Permitir que um usuário faça uma reserva em um hotel. Isso
+deve diminuir o número de quartos disponiveis do hotel.
+○ Cancelar reserva: Permitir que um usuário cancele uma reserva. Isso deve
+aumentar o número de quartos disponiveis no hotel correspondente.
+○ Listar reservas: Mostrar todas as reservas, incluindo detalhes do hotel e do
+cliente.
+
+3. Regras de Negócio:
+○ Um hotel só pode aceitar reservas se houver quartos disponíveis.
+○ As reservas devem ser identificadas por um ID único e associadas a um
+único hotel.
+
+4. Desafios Adicionais (Opcionais):
+○ Implementar uma função de check-in e check-out que atualize a
+disponibilidade de quartos.
+○ Gerar relatórios de ocupação para um hotel.
+○ Permitir que o usuário avalie o hotel após a estadia, e armazenar essas
+avaliações dentro do objeto do hotel.*/
+
+        class Hotel {
+            constructor(id, nome, cidade, quartosTotais) {
+                this.id = id;
+                this.nome = nome;
+                this.cidade = cidade;
+                this.quartosTotais = quartosTotais;
+                this.quartosDisponiveis = quartosTotais;
+                this.avaliacoes = [];
+            }
+
+            avaliar(estrelas, comentario) {
+                this.avaliacoes.push({ estrelas, comentario });
+            }
+        }
+
+        class Reserva {
+            constructor(idReserva, idHotel, nomeCliente) {
+                this.idReserva = idReserva;
+                this.idHotel = idHotel;
+                this.nomeCliente = nomeCliente;
+            }
+        }
+
+        const hoteis = [];
+        const reservas = [];
+
+        const gerarIdUnico = (arr) => arr.length ? Math.max(...arr.map(item => item.id || item.idReserva)) + 1 : 1;
+
+        const adicionarHotel = () => {
+            const nome = prompt("Digite o nome do hotel:");
+            const cidade = prompt("Digite a cidade do hotel:");
+            const quartosTotais = parseInt(prompt("Digite o número total de quartos:"), 10);
+
+            if (isNaN(quartosTotais) || quartosTotais <= 0) {
+                alert("Número de quartos inválido.");
+                return;
+            }
+
+            const id = gerarIdUnico(hoteis);
+            const novoHotel = new Hotel(id, nome, cidade, quartosTotais);
+            hoteis.push(novoHotel);
+            alert(`Hotel adicionado com sucesso: ${nome} em ${cidade} com ${quartosTotais} quartos.`);
+        };
+
+        const buscarHoteisPorCidade = () => {
+            const cidade = prompt("Digite a cidade para buscar hotéis:");
+            const encontrados = hoteis.filter(hotel => hotel.cidade.toLowerCase() === cidade.toLowerCase());
+
+            if (encontrados.length) {
+                let mensagem = `Hotéis encontrados em ${cidade}:\n`;
+                encontrados.forEach(hotel => mensagem += `ID do Hotel: ${hotel.id} - ${hotel.nome} (${hotel.quartosDisponiveis}/${hotel.quartosTotais} quartos disponíveis)\n`);
+                alert(mensagem);
+            } else {
+                alert(`Nenhum hotel encontrado em ${cidade}.`);
+            }
+        };
+
+        const fazerReserva = () => {
+            const idHotel = parseInt(prompt("Digite o ID do hotel para a reserva:"), 10);
+            const nomeCliente = prompt("Digite o nome do cliente:");
+
+            const hotel = hoteis.find(h => h.id === idHotel);
+            if (hotel && hotel.quartosDisponiveis > 0) {
+                const idReserva = gerarIdUnico(reservas);
+                const novaReserva = new Reserva(idReserva, idHotel, nomeCliente);
+                reservas.push(novaReserva);
+                hotel.quartosDisponiveis--;
+                alert(`Reserva feita com sucesso para ${nomeCliente} no hotel ${hotel.nome}.`);
+            } else {
+                alert(`Não é possível fazer a reserva. Quartos indisponíveis ou hotel não encontrado.`);
+            }
+        };
+
+        const cancelarReserva = () => {
+            const idReserva = parseInt(prompt("Digite o ID da reserva a ser cancelada:"), 10);
+
+            const index = reservas.findIndex(r => r.idReserva === idReserva);
+            if (index > -1) {
+                const reserva = reservas[index];
+                const hotel = hoteis.find(h => h.id === reserva.idHotel);
+                if (hotel) {
+                    hotel.quartosDisponiveis++;
+                    reservas.splice(index, 1);
+                    alert(`Reserva cancelada com sucesso para ${reserva.nomeCliente} no hotel ${hotel.nome}.`);
+                }
+            } else {
+                alert(`Reserva não encontrada.`);
+            }
+        };
+
+        const listarReservas = () => {
+            if (reservas.length) {
+                let mensagem = `Lista de reservas:\n`;
+                reservas.forEach(reserva => {
+                    const hotel = hoteis.find(h => h.id === reserva.idHotel);
+                    mensagem += `- Reserva ${reserva.idReserva}: ${reserva.nomeCliente} no hotel ${hotel.nome}\n`;
+                });
+                alert(mensagem);
+            } else {
+                alert(`Nenhuma reserva encontrada.`);
+            }
+        };
+
+        const checkIn = () => {
+            const idReserva = parseInt(prompt("Digite o ID da reserva para check-in:"), 10);
+
+            const reserva = reservas.find(r => r.idReserva === idReserva);
+            if (reserva) {
+                alert(`Check-in realizado para ${reserva.nomeCliente} no hotel ${hoteis.find(h => h.id === reserva.idHotel).nome}.`);
+            } else {
+                alert(`Reserva não encontrada.`);
+            }
+        };
+
+        const checkOut = () => {
+            const idReserva = parseInt(prompt("Digite o ID da reserva para check-out:"), 10);
+
+            const index = reservas.findIndex(r => r.idReserva === idReserva);
+            if (index > -1) {
+                const reserva = reservas[index];
+                const hotel = hoteis.find(h => h.id === reserva.idHotel);
+                hotel.quartosDisponiveis++;
+                reservas.splice(index, 1);
+                alert(`Check-out realizado para ${reserva.nomeCliente} no hotel ${hotel.nome}.`);
+            } else {
+                alert(`Reserva não encontrada.`);
+            }
+        };
+
+        const avaliarHotel = () => {
+            const idHotel = parseInt(prompt("Digite o ID do hotel para avaliar:"), 10);
+            const hotel = hoteis.find(h => h.id === idHotel);
+
+            if (!hotel) {
+                alert(`Hotel não encontrado.`);
+                return;
+            }
+
+            const reservasDoHotel = reservas.filter(r => r.idHotel === idHotel);
+
+            if (reservasDoHotel.length === 0) {
+                alert(`Não é possível avaliar o hotel. Avaliações são permitidas somente após o check-out.`);
+                return;
+            }
+
+            const idReserva = parseInt(prompt("Digite o ID da reserva para avaliar:"), 10);
+            const reserva = reservas.find(r => r.idReserva === idReserva && r.idHotel === idHotel);
+
+            if (!reserva) {
+                alert(`Reserva não encontrada para avaliação.`);
+                return;
+            }
+
+            const estrelas = parseInt(prompt("Digite o número de estrelas (1 a 5):"), 10);
+            const comentario = prompt("Digite o comentário:");
+
+            hotel.avaliar(estrelas, comentario);
+            alert(`Avaliação registrada para o hotel ${hotel.nome}.`);
+        };
+
+
+        const mostrarMenu = () => {
+            const menu = `
+                Sistema de Reserva de Hotéis
+                Escolha uma opção:
+                1. Adicionar Hotel
+                2. Buscar Hotéis por Cidade
+                3. Fazer Reserva
+                4. Cancelar Reserva
+                5. Listar Reservas
+                6. Check-in
+                7. Check-out
+                8. Avaliar Hotel
+                9. Sair
+            `;
+            return parseInt(prompt(menu), 10);
+        };
+
+        const iniciarSistema = () => {
+            let opcao = 0;
+            while (opcao !== 9) {
+                opcao = mostrarMenu();
+                switch (opcao) {
+                    case 1:
+                        adicionarHotel();
+                        break;
+                    case 2:
+                        buscarHoteisPorCidade();
+                        break;
+                    case 3:
+                        fazerReserva();
+                        break;
+                    case 4:
+                        cancelarReserva();
+                        break;
+                    case 5:
+                        listarReservas();
+                        break;
+                    case 6:
+                        checkIn();
+                        break;
+                    case 7:
+                        checkOut();
+                        break;
+                    case 8:
+                        avaliarHotel();
+                        break;
+                    case 9:
+                        alert("Saindo do sistema.");
+                        break;
+                    default:
+                        alert("Opção inválida. Tente novamente.");
+                }
+            }
+        };
+    </script>
+</body>
+</html>
